@@ -1,41 +1,37 @@
-// netlify/functions/contact.js
-// Simple Netlify serverless function to handle contact form POST requests
+const nodemailer = require("nodemailer");
 
 module.exports.handler = async (event) => {
-  // Only accept POST requests
-  if (event.httpMethod !== "POST") {
-    return {
-      statusCode: 405,
-      body: "Method Not Allowed"
-    };
-  }
+  if (event.httpMethod !== "POST") return { statusCode: 405, body: "Method Not Allowed" };
 
   let data;
-  try {
-    // Parse the JSON body
-    data = JSON.parse(event.body || "{}");
-  } catch (err) {
-    return {
-      statusCode: 400,
-      body: "Invalid JSON"
-    };
-  }
+  try { data = JSON.parse(event.body || "{}"); }
+  catch { return { statusCode: 400, body: "Invalid JSON" }; }
 
-  // Basic validation (optional)
-  if (!data.name || !data.phone) {
-    return {
-      statusCode: 400,
-      body: "Missing required fields: name and phone"
-    };
-  }
+  if (!data.name || !data.phone) return { statusCode: 400, body: "Missing fields" };
 
-  // For now, just echo back the received data
-  // Later you can replace this with nodemailer to send real emails
-  return {
-    statusCode: 200,
-    body: JSON.stringify({
-      message: "Message received successfully",
-      received: data
-    })
+  // Create transporter with environment variables
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST || "smtp.gmail.com",
+    port: process.env.SMTP_PORT || 587,
+    secure: false,
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+
+  const mailOptions = {
+    from: `"TaalumaCyber Website" <${process.env.EMAIL_USER}>`,
+    to: process.env.EMAIL_TO,
+    subject: "New Enquiry from Website",
+    text: `Name: ${data.name}\nPhone: ${data.phone}\nEmail: ${data.email || ""}\nMessage: ${data.message || ""}`
   };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return { statusCode: 200, body: JSON.stringify({ ok: true, message: "Enquiry sent!" }) };
+  } catch (err) {
+    console.error(err);
+    return { statusCode: 500, body: "Failed to send email" };
+  }
 };
