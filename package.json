@@ -1,0 +1,9 @@
+{
+  "name": "taalumacyber-institute",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TaalumaCyber Institute website with Netlify serverless email function",
+  "dependencies": {
+    "nodemailer": "^6.9.8"
+  }
+}
